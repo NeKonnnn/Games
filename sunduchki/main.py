@@ -345,9 +345,17 @@ else:
 menu_background = load_background_image('menu.jpg')
 rules_background = load_background_image('rules.jpg')
 about_background = load_background_image('about.jpg')
+settings_background = load_background_image('settings.jpg')
 load_background_music()  # Загрузка и воспроизведение музыки
 buttons = create_buttons(SCREEN_WIDTH, SCREEN_HEIGHT)
 return_button = pygame.Rect(SCREEN_WIDTH - 210, SCREEN_HEIGHT - 60, 200, 50)  # Кнопка "Вернуться"
+
+slider_value = 0.5  # Начальное значение громкости (от 0 до 1)
+# Создание прямоугольника для слайдера
+slider_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2, 200, 20)  # Обновлено для соответствия функции draw_settings_screen
+handle_rect = pygame.Rect(0, 0, 20, 30)  # Обновлено для соответствия функции draw_settings_screen
+# Добавляем переменную для отслеживания зажатия кнопки мыши
+is_sliding = False
 
 # Анимация текста "О разработчике"
 text_y_pos = SCREEN_HEIGHT // 2
@@ -362,29 +370,62 @@ running = True
 while running:
     current_time = time.time()
     time_delta = current_time - last_update_time
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
         if current_state == "menu":
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = event.pos  # Получаем позицию мыши
+                mouse_pos = event.pos
                 response = handle_menu_click(mouse_pos, buttons)
                 if response == "Старт игры":
-                    pygame.mixer.music.stop()  # Останавливаем музыку меню
-                    load_game_music()  # Запускаем музыку игры
+                    pygame.mixer.music.stop()
+                    load_game_music()
                     current_state = "game"
                 elif response == "Правила":
                     current_state = "rules"
                 elif response == "О разработчике":
                     current_state = "about"
+                elif response == "Настройки":
+                    current_state = "settings"
                 elif response == "Выход из игры":
                     running = False
 
-        elif current_state in ["rules", "about"]:
+        elif current_state == "rules":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if return_button.collidepoint(event.pos):
                     current_state = "menu"
+
+        elif current_state == "about":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if return_button.collidepoint(event.pos):
+                    current_state = "menu"
+
+            # Обновление анимации текста
+            if time_delta > animation_speed:
+                text_y_pos -= 1
+                if text_y_pos < 0:
+                    text_y_pos = SCREEN_HEIGHT
+                last_update_time = current_time
+
+        elif current_state == "settings":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if return_button.collidepoint(event.pos):
+                    current_state = "menu"
+                elif slider_rect.collidepoint(event.pos):
+                    is_sliding = True  # Начинаем слайдинг
+                    x, _ = event.pos
+                    slider_value = (x - slider_rect.left) / slider_rect.width
+                    pygame.mixer.music.set_volume(slider_value)
+                    handle_rect.centerx = slider_rect.left + int(slider_rect.width * slider_value)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                is_sliding = False  # Заканчиваем слайдинг
+            elif event.type == pygame.MOUSEMOTION and is_sliding:
+                x, _ = event.pos
+                slider_value = max(0, min(1, (x - slider_rect.left) / slider_rect.width))
+                handle_rect.centerx = slider_rect.left + int(slider_rect.width * slider_value)
+                pygame.mixer.music.set_volume(slider_value)
 
         elif current_state == "game":
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -441,7 +482,7 @@ while running:
         draw_menu(screen, buttons, menu_background)
     elif current_state == "rules":
         screen.blit(rules_background, (0, 0))
-        draw_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, pygame.mouse.get_pos())
+        draw_rules_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, pygame.mouse.get_pos(), "rules_text.txt")
         draw_button_menu(screen, return_button, "Вернуться", check_hover(return_button, pygame.mouse.get_pos()))
 
     elif current_state == "about":
@@ -454,6 +495,19 @@ while running:
                 text_y_pos = SCREEN_HEIGHT
             last_update_time = current_time
         draw_button_menu(screen, return_button, "Вернуться", check_hover(return_button, pygame.mouse.get_pos()))
+
+    elif current_state == "settings":
+        screen.blit(settings_background, (0, 0))
+        draw_settings_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT, pygame.mouse.get_pos(), slider_value, settings_background)
+        draw_button_menu(screen, return_button, "Вернуться", check_hover(return_button, pygame.mouse.get_pos()))
+        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if slider_rect.collidepoint(event.pos):
+                # Если пользователь нажал на трек ползунка
+                handle_rect.centerx = event.pos[0]
+                slider_value = (handle_rect.centerx - slider_rect.left) / slider_rect.width
+                pygame.mixer.music.set_volume(slider_value)  # Устанавливаем громкость
+
     elif current_state == "game":
         screen.blit(background_image, (0, 0))
         draw_hand(players[0].hand, SCREEN_HEIGHT - CARD_HEIGHT - 10, True)
