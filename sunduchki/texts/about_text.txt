@@ -1,0 +1,19 @@
+Над игрой работал:
+
+NeKonn - 
+junior DataScientist, в компании АО ГПБ
+
+Игра разработана при поддержке нейросетей:
+
+- Chat GPT
+- Midjourney
+- Dalle-3
+- Stable Diffusion
+
+Отдельная благодарность сервисам:
+
+- За предоставление музыкального сопровождения игры:
+https://zvukipro.com/music/651-fonovaja-muzyka-dlja-igr-i-drugih-situacij-zacikleno.html
+
+- За корректировку разрешений фоновых изображений:
+https://www.imgonline.com.ua/resize-image.php
